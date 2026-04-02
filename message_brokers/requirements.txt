@@ -1,0 +1,6 @@
+pika
+stomp.py
+confluent-kafka
+pulsar-client
+# rocketmq-client-python often requires manual C++ library setup on Mac.
+# We will focus on Pulsar first and provide concepts for RocketMQ.

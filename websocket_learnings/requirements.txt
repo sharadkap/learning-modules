@@ -1,0 +1,4 @@
+websockets
+asyncio
+pymongo[srv]
+python-dotenv

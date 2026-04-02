@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package messenger;
+
+// The Learning Messenger Service
+service LearningMessenger {
+  // Unary: A basic Request-Response call
+  rpc GetLearningStatus (StatusRequest) returns (StatusResponse);
+
+  // Server Streaming: Server pushes multiple updates to the client
+  rpc StreamLearnings (TopicRequest) returns (stream LearningUpdate);
+
+  // Client Streaming: Client sends a stream of research notes to the server
+  rpc SubmitResearchNotes (stream ResearchNote) returns (SummaryResponse);
+
+  // Bi-directional Streaming: Real-time collaborative chat/updates
+  rpc CollaborativeFeed (stream FeedUpdate) returns (stream FeedUpdate);
+}
+
+message StatusRequest {
+  string user_id = 1;
+}
+
+message StatusResponse {
+  string message = 1;
+  bool active = 2;
+}
+
+message TopicRequest {
+  string topic = 1;
+}
+
+message LearningUpdate {
+  string content = 1;
+  int32 progress = 2;
+  string timestamp = 3;
+}
+
+message ResearchNote {
+  string text = 1;
+}
+
+message SummaryResponse {
+  int32 count = 1;
+  string final_summary = 2;
+}
+
+message FeedUpdate {
+  string user = 1;
+  string message = 2;
+}

@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # RABBITMQ: The Traditional Message Broker
+  # Management UI on http://localhost:15672 (guest/guest)
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # AMQP Protocol
+      - "15672:15672" # Management UI
+    networks:
+      - broker-net
+
+  # ACTIVEMQ: The Enterprise Standard (Java-based)
+  # Web Console on http://localhost:8161 (admin/admin)
+  activemq:
+    image: rmohr/activemq:latest
+    ports:
+      - "61616:61616" # OpenWire
+      - "8161:8161"   # Web Console
+      - "61613:61613" # STOMP
+    networks:
+      - broker-net
+
+  # KAFKA: The Event Streaming Platform
+  # Requires Zookeeper (in this version) to manage state
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - broker-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    platform: linux/arm64
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    networks:
+      - broker-net
+
+  # ROCKETMQ: High throughput, distributed, strictly ordered
+  namesrv:
+    image: apache/rocketmq:4.9.4
+    container_name: rmqnamesrv
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    networks:
+      - broker-net
+
+  broker:
+    image: apache/rocketmq:4.9.4
+    container_name: rmqbroker
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    environment:
+      - NAMESRV_ADDR=namesrv:9876
+    command: sh mqbroker -n namesrv:9876
+    depends_on:
+      - namesrv
+    networks:
+      - broker-net
+
+  # PULSAR: Unified messaging and streaming model
+  pulsar:
+    image: apachepulsar/pulsar:3.1.0
+    container_name: pulsar
+    ports:
+      - "6650:6650"
+      - "8080:8080"
+    environment:
+      - PULSAR_MEM=-Xms512m -Xmx1g -XX:MaxDirectMemorySize=1g
+    command: bin/pulsar standalone
+    networks:
+      - broker-net
+
+networks:
+  broker-net:
+    driver: bridge
